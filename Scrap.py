@@ -3,6 +3,7 @@
 from bs4 import BeautifulSoup
 from bs4 import SoupStrainer
 import requests
+import re
 #from cachecontrol import CacheControl
 
 url_recherche = "https://www.veocinemas.fr/grand-lumiere/films-a-l-affiche/"
@@ -35,11 +36,17 @@ soup = BeautifulSoup(html.text, 'html.parser', parse_only=SoupStrainer(id="mainc
 film={}
 liste_films = []
 
+def has_duration(classe):
+    return re.compile("duration").search(classe) and not classe
+
+
 for fiches in soup.find_all("div","fichefilm-mini-block fichefilm-mini-block-pair"):
     film["Titre"] = str(fiches.h4.contents[0])
+    film["EnSalle"] = str(fiches.p.span.strong.contents[0])
     liste_films.append(dict(film))
 
 for fiches in soup.find_all("div", "fichefilm-mini-block fichefilm-mini-block-impair"):
     film["Titre"] = str(fiches.h4.contents[0])
+    film["EnSalle"] = str(fiches.p.span.strong.contents[0])
     liste_films.append(dict(film))
 
