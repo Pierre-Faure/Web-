@@ -82,6 +82,21 @@ def scraping(pair_impair, liste):
         else:
             film["Sortie nationale"] = None
 
+
+        casting = souplette.find("p").find("strong")
+        if (casting != None):
+            film["Realisateur(s)"] = str(casting.contents[0])
+            if (casting.next_sibling != None):
+                if (casting.next_sibling.next_sibling != None):
+                    film["Acteur(s)"] = str(casting.next_sibling.next_sibling.next_sibling.contents[0])
+                else:
+                    film["Acteur(s)"] = None
+            else:
+                film["Acteur(s)"] = None
+        else:
+            film["Realisateur(s)"] = None
+
+
         liste.append(dict(film))
 
     return liste
