@@ -97,6 +97,7 @@ def scraping(pair_impair, liste):
             film["Realisateur(s)"] = None
 
 
+
         liste.append(dict(film))
 
     return liste
