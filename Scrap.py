@@ -43,7 +43,7 @@ def has_duration(classe):
 
 for fiches in soup.find_all("div","fichefilm-mini-block fichefilm-mini-block-pair"): #on parcoure les fiches de film coté gauche de la page
     film["Titre"] = str(fiches.h4.contents[0]) #Le le titre du film est la première valeur de la liste du contenu de la balise h4
-    film["EnSalle"] = str(fiches.p.span.strong.contents[0]) #on accede à la date de disponibilité du film en salle
+    film["En Salle"] = str(fiches.p.span.strong.contents[0]) #on accede à la date de disponibilité du film en salle
 
     if (fiches.p.find("strong", "hi duration") !=None): #certains films n'ont pas de duree et on ne peut pas faire .contents sur un NoneType
         film["Duree"] = str(fiches.p.find("strong", "hi duration").contents[0])
@@ -53,17 +53,67 @@ for fiches in soup.find_all("div","fichefilm-mini-block fichefilm-mini-block-pai
     lien = requests.get(fiches.a['href'], proxies = proxies) #on recupere l'adresse du lien qui mene à la fiche etendue du film
     souplette = BeautifulSoup(lien.text, 'html.parser', parse_only=SoupStrainer(id="maincontent-large")) #on cree u obj BS pour cette nouvelle page
 
+    genre_film = souplette.find("strong", "hi duration").next_sibling.next_sibling
+    if (genre_film != None):
+        film["Genre"] = str(genre_film.contents[0])
+    else:
+        film["Genre"] = None
+
+    sortie_nationale = genre_film.next_sibling.next_sibling.next_sibling.next_sibling
+    if (sortie_nationale != None):
+        film["Sortie nationale"] = str(sortie_nationale.contents[0])
+    else:
+        film["Sortie nationale"] = None
+
+
 
     liste_films.append(dict(film)) #on stocke chaque dictionnaire créé (1par film) dans une liste
 
 for fiches in soup.find_all("div", "fichefilm-mini-block fichefilm-mini-block-impair"): #idem pour les fiches coté droit
     film["Titre"] = str(fiches.h4.contents[0])
-    film["EnSalle"] = str(fiches.p.span.strong.contents[0])
+    film["En Salle"] = str(fiches.p.span.strong.contents[0])
 
     if (fiches.p.find("strong", "hi duration") != None):
         film["Duree"] = str(fiches.p.find("strong", "hi duration").contents[0])
     else:
         film["Duree"] = None
+
+    lien = requests.get(fiches.a['href'], proxies = proxies) #on recupere l'adresse du lien qui mene à la fiche etendue du film
+    souplette = BeautifulSoup(lien.text, 'html.parser', parse_only=SoupStrainer(id="maincontent-large")) #on cree u obj BS pour cette nouvelle page
+
+    if (souplette.find("strong", "hi duration") != None):
+        if ( souplette.find("strong", "hi duration").next_sibling!= None):
+            genre_film = souplette.find("strong", "hi duration").next_sibling.next_sibling
+        else:
+            genre_film = None
+    else:
+        genre_film = None
+
+    if (genre_film != None):
+        film["Genre"] = str(genre_film.contents[0])
+    else:
+        film["Genre"] = None
+
+
+    if (genre_film != None):
+        if(genre_film.next_sibling != None):
+            if (genre_film.next_sibling.next_sibling != None):
+                sortie_nationale = genre_film.next_sibling.next_sibling.next_sibling.next_sibling
+            else:
+                sortie_nationale = None
+        else:
+            sortie_nationale = None
+    else:
+        sortie_nationale = None
+
+
+
+
+    if (sortie_nationale != None):
+        film["Sortie nationale"] = str(sortie_nationale.contents[0])
+    else:
+        film["Sortie nationale"] = None
+
     liste_films.append(dict(film))
 
 df_films = pd.DataFrame(liste_films) #création d'un dataframe
