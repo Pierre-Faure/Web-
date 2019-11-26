@@ -1,14 +1,13 @@
-
 # Imports
 from bs4 import BeautifulSoup
 from bs4 import SoupStrainer
 import requests
 import re
 import pandas as pd
-#from cachecontrol import CacheControl
+
+# from cachecontrol import CacheControl
 
 url_recherche = "https://www.veocinemas.fr/grand-lumiere/films-a-l-affiche/"
-
 
 # Fonctions
 
@@ -22,37 +21,50 @@ url_recherche = "https://www.veocinemas.fr/grand-lumiere/films-a-l-affiche/"
 #
 # html = cached_sess.get("url_recherche")
 
-#proxies
+# proxies
 
 proxies = {
-  "http": "http://atlas.proxy.edf.fr:3131",
-  "https": "https://atlas.proxy.edf.fr:3131"
+    "http": "http://atlas.proxy.edf.fr:3131",
+    "https": "https://atlas.proxy.edf.fr:3131"
 }
 
-
-html = requests.get(url_recherche, proxies = proxies)
+html = requests.get(url_recherche, proxies=proxies)
 
 soup = BeautifulSoup(html.text, 'html.parser', parse_only=SoupStrainer(id="maincontent-large"))
 
-film={}
+film = {}
 liste_films = []
+
 
 def has_duration(classe):
     return re.compile("duration").search(classe) and not classe
 
-def scraping(pair_impair, liste):
-    for fiches in soup.find_all("div",pair_impair):  # on parcoure les fiches films du cote choisi (pair ou impair
-        film["Titre"] = str(fiches.h4.contents[0]) # Le le titre du film est la première valeur de la liste du contenu de la balise h4
-        film["En Salle"] = str(fiches.p.span.strong.contents[0]) # on accede à la date de disponibilité du film en salle
 
-        if (fiches.p.find("strong", "hi duration") != None): # certains films n'ont pas de duree et on ne peut pas faire .contents sur un NoneType
+def scraping(pair_impair, liste):
+    for fiches in soup.find_all("div", pair_impair):  # on parcoure les fiches films du cote choisi (pair ou impair)
+
+    #---------------Titre--------------#
+        # Le le titre du film est la première valeur de la liste du contenu de la balise h4
+        film["Titre"] = str(fiches.h4.contents[0])
+
+    # ---------------En salle--------------#
+        film["En Salle"] = str(
+            fiches.p.span.strong.contents[0])  # on accede à la date de disponibilité du film en salle
+
+    # ---------------Durée--------------#
+        # certains films n'ont pas de duree et on ne peut pas faire .contents sur un NoneType
+        if (fiches.p.find("strong","hi duration") != None):
             film["Duree"] = str(fiches.p.find("strong", "hi duration").contents[0])
         else:
             film["Duree"] = None
 
-        lien = requests.get(fiches.a['href'],proxies=proxies)  # on recupere l'adresse du lien qui mene à la fiche etendue du film
-        souplette = BeautifulSoup(lien.text, 'html.parser', parse_only=SoupStrainer(id="maincontent-large"))  # on cree u obj BS pour cette nouvelle page
+    # ---------------lien--------------#
+        # on recupere l'adresse du lien qui mene à la fiche etendue du film
+        lien = requests.get(fiches.a['href'],proxies=proxies)
+        # on cree u obj BS pour cette nouvelle page
+        souplette = BeautifulSoup(lien.text, 'html.parser', parse_only=SoupStrainer(id="maincontent-large"))
 
+    # ---------------Genre--------------#
         if (souplette.find("strong", "hi duration") != None):
             if (souplette.find("strong", "hi duration").next_sibling != None):
                 genre_film = souplette.find("strong", "hi duration").next_sibling.next_sibling
@@ -66,6 +78,7 @@ def scraping(pair_impair, liste):
         else:
             film["Genre"] = None
 
+    # ---------------Date sortie nationale--------------#
         if (genre_film != None):
             if (genre_film.next_sibling != None):
                 if (genre_film.next_sibling.next_sibling != None):
@@ -82,8 +95,8 @@ def scraping(pair_impair, liste):
         else:
             film["Sortie nationale"] = None
 
-
-        casting = souplette.find("p").find("strong")
+    # ---------------Casting (acteur(s)/realisateur(s))--------------#
+        casting = souplette.find("p","").find("strong","")
         if (casting != None):
             film["Realisateur(s)"] = str(casting.contents[0])
             if (casting.next_sibling != None):
@@ -96,17 +109,12 @@ def scraping(pair_impair, liste):
         else:
             film["Realisateur(s)"] = None
 
-
-
         liste.append(dict(film))
+        film = {}
 
     return liste
 
 
-
-
-
-liste_films = scraping("fichefilm-mini-block fichefilm-mini-block-pair",liste_films)
-liste_films = scraping("fichefilm-mini-block fichefilm-mini-block-impair",liste_films)
-df_films = pd.DataFrame(liste_films) #création d'un dataframe
-
+liste_films = scraping("fichefilm-mini-block fichefilm-mini-block-pair", liste_films)
+liste_films = scraping("fichefilm-mini-block fichefilm-mini-block-impair", liste_films)
+df_films = pd.DataFrame(liste_films)  # création d'un dataframe
