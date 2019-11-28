@@ -109,6 +109,33 @@ def scraping(pair_impair, liste):
         else:
             film["Realisateur(s)"] = None
 
+    # ---------------Titre original--------------#
+        if (souplette.find("p", "titre_vo") != None):
+            if (souplette.find("p", "titre_vo").find("strong") != None):
+                film["Titre original"] = str(souplette.find("p", "titre_vo").find("strong").contents[0])
+            else:
+                film["Titre original"] = None
+        else:
+            film["Titre original"] = None
+
+    # ---------------Synopsis--------------#
+        if (souplette.find("p", "synopsis description") != None):
+            film["Synopsis"] = str(souplette.find("p", "synopsis description").contents[0])
+        else:
+            film["Synopsis"] = None
+
+    # ---------------Note--------------#
+        if (souplette.find("span","rating") != None):
+            film["Note (/5)"] = str(souplette.find("span","rating").contents[0])
+        else:
+            film["Note (/5)"] = None
+
+    # ---------------Votes--------------#
+        if (souplette.find("span", "nbvote fn") != None):
+            film["Votes"] = str(souplette.find("span", "nbvote fn").contents[0])
+        else:
+            film["Votes"] = None
+
         liste.append(dict(film))
 
 
@@ -118,3 +145,22 @@ def scraping(pair_impair, liste):
 liste_films = scraping("fichefilm-mini-block fichefilm-mini-block-pair", liste_films)
 liste_films = scraping("fichefilm-mini-block fichefilm-mini-block-impair", liste_films)
 df_films = pd.DataFrame(liste_films)  # création d'un dataframe
+
+# Mise en forme du df
+
+df_films["Note (/5)"] = df_films["Note (/5)"].astype("float")
+
+pd.to_datetime(df_films["Sortie nationale"])
+df_films["Sortie nationale"] = df_films["Sortie nationale"].astype("datetime64[D]")
+
+def h_to_min(valeur):
+    heures, minutes = valeur.split('h')
+    return int(heures)*60 + int(minutes)
+df_films['Duree'] = df_films['Duree'].fillna("00h00").apply(h_to_min).astype("int")
+
+
+# som = 0
+# for votes in df_films["Votes"]:
+#     if (votes !=None):
+#         vote = int(vote.strip(" votes"))
+#         som = som + vote
