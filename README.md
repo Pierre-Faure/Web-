@@ -1,2 +1,2 @@
 # WebScraping
-## Scrapping de la page "films à l'affiche" du site internet du cinéma Véo Grand Lumière à St Chamond
+## Scraping of the *Veo Grand Lumiere*'s website
