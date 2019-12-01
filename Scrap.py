@@ -1,3 +1,4 @@
+
 # Imports
 from bs4 import BeautifulSoup
 from bs4 import SoupStrainer
@@ -24,8 +25,8 @@ url_recherche = "https://www.veocinemas.fr/grand-lumiere/films-a-l-affiche/"
 # proxies
 
 proxies = {
-    "http": "http://atlas.proxy.edf.fr:3131",
-    "https": "https://atlas.proxy.edf.fr:3131"
+    # "http": "http://atlas.proxy.edf.fr:3131",
+    # "https": "https://atlas.proxy.edf.fr:3131"
 }
 
 html = requests.get(url_recherche, proxies=proxies)
@@ -158,9 +159,16 @@ def h_to_min(valeur):
     return int(heures)*60 + int(minutes)
 df_films['Duree'] = df_films['Duree'].fillna("00h00").apply(h_to_min).astype("int")
 
+def votes_fill():
+    som = moy = 0
 
-# som = 0
-# for votes in df_films["Votes"]:
-#     if (votes !=None):
-#         vote = int(vote.strip(" votes"))
-#         som = som + vote
+    for votes in df_films["Votes"]:
+        if (votes !=None):
+            votes = votes.strip(" votes")
+            #votes = int(votes)
+            som = som + int(votes)
+    moy = som/df_films["Votes"].index.stop
+
+    for votes2 in df_films["Votes"]:
+        if (votes2 ==None):
+            votes2 = moy
